@@ -1,2 +1,2 @@
 # WebOverlay
-A C++ server and a js client to create and manage HTML overlays (for OBS mostly)
+A C++ web server and a js framework to create and manage HTML overlays (for OBS mostly)
