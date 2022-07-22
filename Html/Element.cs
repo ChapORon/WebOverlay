@@ -2,11 +2,16 @@
 {
     public class Element : BaseElement
     {
-        public Element(string name): base(name, allowEventsAttributes: true, allowUnknownAttributes: true) {}
+        protected Element(string name, bool allowUnknownAttributes) : base(name, allowUnknownAttributes: allowUnknownAttributes) { }
 
-        public bool AddAttribute(string name, object value)
+        public void AddAttribute(string name, object value)
         {
-            return SetAttribute(name, value);
+            SetAttribute(name, value);
+        }
+
+        public void AddLineBreak()
+        {
+            AddElement(new LineBreak());
         }
 
         public void AddChild(BaseElement element)

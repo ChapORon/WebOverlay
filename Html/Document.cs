@@ -5,7 +5,7 @@ namespace WebOverlay.Html
     public class Document : BaseElement
     {
         private readonly Head m_Head;
-        private readonly Element m_Body = new("body");
+        private readonly Body m_Body = new();
 
         public Document(string title) : base("html")
         {
@@ -15,15 +15,14 @@ namespace WebOverlay.Html
         }
 
         public Head GetHead() { return m_Head; }
-        public Element GetBody() { return m_Body; }
+        public Body GetBody() { return m_Body; }
 
-        public override void Append(ref StringBuilder builder)
+        public override string ToString()
         {
-            builder.Append("<!DOCTYPE html>");
-            AppendHeadTag(ref builder);
-            builder.Append(m_Head.ToString());
-            builder.Append(m_Body.ToString());
-            AppendTailTag(ref builder);
+            StringBuilder builder = new();
+            builder.AppendLine("<!DOCTYPE html>");
+            Append(ref builder, 0);
+            return builder.ToString();
         }
     }
 }
