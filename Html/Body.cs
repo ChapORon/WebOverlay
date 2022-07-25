@@ -1,7 +1,7 @@
 ﻿namespace WebOverlay.Html
 {
-    public class Body : Element
+    public class Body : BaseElement
     {
-        public Body() : base("body", false) { }
+        public Body() : base("body") { }
     }
 }

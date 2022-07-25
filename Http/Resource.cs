@@ -4,37 +4,68 @@ namespace WebOverlay.Http
 {
     public class Resource
     {
+        private readonly bool m_NeedUpdate = false;
         private Server? m_Server = null;
         private string m_URL = "";
         private readonly List<int> m_Listeners = new();
 
-        public void Init(Server server, string url, params dynamic[] args)
+        public Resource() { }
+        protected Resource(bool needUpdate)
+        {
+            m_NeedUpdate = needUpdate;
+        }
+
+        internal bool NeedUpdate() { return m_NeedUpdate; }
+
+        internal void Init(Server server, string url, params dynamic[] args)
         {
             m_URL = url;
             m_Server = server;
             OnInit(args);
         }
 
+        internal void Update(long deltaTime)
+        {
+            OnUpdate(deltaTime);
+        }
+
         protected virtual void OnInit(params dynamic[] args) { }
+
+        protected virtual void OnUpdate(long deltaTime) {}
 
         public string URL { get { return m_URL; } }
 
-        protected void SendError(int userID, Response? response)
+        protected void SendError(Response? response)
         {
             if (m_Server != null)
-                m_Server.SendError(userID, response);
+            {
+                foreach (int listenerID in m_Listeners)
+                    m_Server.SendError(listenerID, response);
+            }
+        }
+
+        protected void Send(string response)
+        {
+            if (m_Server != null)
+            {
+                foreach (int listenerID in m_Listeners)
+                    m_Server.Send(listenerID, response);
+            }
+        }
+
+        protected void SendError(int userID, Response? response)
+        {
+            m_Server?.SendError(userID, response);
         }
 
         protected void SendResponse(int userID, Response? response)
         {
-            if (m_Server != null)
-                m_Server.SendResponse(userID, response);
+            m_Server?.SendResponse(userID, response);
         }
 
-        protected void SendResponse(int userID, string response)
+        protected void Send(int userID, string response)
         {
-            if (m_Server != null)
-                m_Server.SendResponse(userID, response);
+            m_Server?.Send(userID, response);
         }
 
         internal void AddListener(int listenerID)
@@ -57,16 +88,11 @@ namespace WebOverlay.Http
                 response["Connection"] = "Upgrade";
                 response["Upgrade"] = "websocket";
                 response["Sec-WebSocket-Accept"] = Convert.ToBase64String(System.Security.Cryptography.SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes((string)request["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
-                if (m_Server != null)
-                {
-                    m_Server.SetClientType(clientID, ClientType.WebSocket);
-                    m_Server.ListenTo(clientID, this);
-                }
                 SendResponse(clientID, response);
+                m_Server?.EnableClientWebSocket(clientID);
+                m_Server?.ListenTo(clientID, this);
                 return;
             }
-            if (m_Server != null && m_Server.GetClientType(clientID) == ClientType.None)
-                m_Server.SetClientType(clientID, ClientType.Browser);
             switch (request.Method)
             {
                 case "GET":

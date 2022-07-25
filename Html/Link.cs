@@ -37,14 +37,14 @@
             SetRel(relationType);
         }
 
-        public void SetCrossOrigin(string value) { SetAttribute("crossorigin", value); }
-        public void SetHref(string value) { SetAttribute("href", value); }
-        public void SetHrefLang(string value) { SetAttribute("hreflang", value); }
-        public void SetMedia(string value) { SetAttribute("media", value); }
-        public void SetReferrerPolicy(string value) { SetAttribute("referrerpolicy", value); }
+        public void SetCrossOrigin(string value) { AddAttribute("crossorigin", value); }
+        public void SetHref(string value) { AddAttribute("href", value); }
+        public void SetHrefLang(string value) { AddAttribute("hreflang", value); }
+        public void SetMedia(string value) { AddAttribute("media", value); }
+        public void SetReferrerPolicy(string value) { AddAttribute("referrerpolicy", value); }
         public void SetRel(RelationType value)
         {
-            SetAttribute("rel", value switch
+            AddAttribute("rel", value switch
             {
                 RelationType.ALTERNATE => "alternate",
                 RelationType.AUTHOR => "author",
@@ -64,8 +64,8 @@
                 _ => "",
             });
         }
-        public void SetSizes(int width, int height) { SetAttribute("sizes", string.Format("{0}x{1}", width, height)); }
-        public void SetSizes() { SetAttribute("sizes", "any"); }
-        public void SetType(string value) { SetAttribute("type", value); }
+        public void SetSizes(int width, int height) { AddAttribute("sizes", string.Format("{0}x{1}", width, height)); }
+        public void SetSizes() { AddAttribute("sizes", "any"); }
+        public void SetType(string value) { AddAttribute("type", value); }
     }
 }

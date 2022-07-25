@@ -9,9 +9,10 @@ namespace WebOverlay.Html
 
         public Document(string title) : base("html")
         {
+            SetElementValidationList(new(true) { "head", "body" });
             m_Head = new(title);
-            AddElement(m_Head);
-            AddElement(m_Body);
+            AddChild(m_Head);
+            AddChild(m_Body);
         }
 
         public Head GetHead() { return m_Head; }

@@ -5,16 +5,22 @@ namespace WebOverlay.Http
 {
     public class Server
     {
-        private readonly Socket m_WebServerSocket;
+        private readonly Socket m_HttpServerSocket;
         private readonly int m_Port;
         private readonly IDGenerator m_IDGenerator = new();
         private readonly Dictionary<int, Client> m_Clients = new();
         private readonly Dictionary<string, Resource> m_Resources = new();
+        private readonly FileSystem m_FileSystem = new();
 
-        public Server(int port)
+        public Server(int port = 80)
         {
             m_Port = port;
-            m_WebServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            m_HttpServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        }
+
+        public void AddResource(string httpPath, string path, bool preLoad = false)
+        {
+            m_FileSystem.AddPath(httpPath, path, preLoad);
         }
 
         public void AddResource<TRes>(string url, params dynamic[] args) where TRes : Resource, new()
@@ -24,13 +30,22 @@ namespace WebOverlay.Http
             m_Resources[url] = newResource;
         }
 
+        public void Update(long deltaTime)
+        {
+            foreach (Resource resource in m_Resources.Values)
+            {
+                if (resource.NeedUpdate())
+                    resource.Update(deltaTime);
+            }
+        }
+
         public void StartListening()
         {
             try
             {
-                m_WebServerSocket.Bind(new IPEndPoint(IPAddress.Any, m_Port));
-                m_WebServerSocket.Listen(10);
-                m_WebServerSocket.BeginAccept(AcceptCallback, null);
+                m_HttpServerSocket.Bind(new IPEndPoint(IPAddress.Any, m_Port));
+                m_HttpServerSocket.Listen(10);
+                m_HttpServerSocket.BeginAccept(AcceptCallback, null);
             }
             catch (Exception ex)
             {
@@ -43,11 +58,11 @@ namespace WebOverlay.Http
             try
             {
                 Console.WriteLine($"Accept CallBack port:{m_Port} protocol type: {ProtocolType.Tcp}");
-                Socket acceptedSocket = m_WebServerSocket.EndAccept(ar);
+                Socket acceptedSocket = m_HttpServerSocket.EndAccept(ar);
                 Client client = new(this, acceptedSocket, m_IDGenerator.NextIdx());
                 m_Clients[client.GetID()] = client;
                 client.StartReceiving();
-                m_WebServerSocket.BeginAccept(AcceptCallback, m_WebServerSocket);
+                m_HttpServerSocket.BeginAccept(AcceptCallback, m_HttpServerSocket);
             }
             catch (Exception ex)
             {
@@ -66,13 +81,19 @@ namespace WebOverlay.Http
             if (m_Resources.TryGetValue(request.Path, out var resource))
                 resource.OnRequest(clientID, request);
             else
-                SendError(clientID, Defines.NewResponse(request.Version, 404));
+            {
+                string? content = m_FileSystem.GetContent(request.Path);
+                if (content != null)
+                    SendResponse(clientID, Defines.NewResponse(request.Version, 200, content));
+                else
+                    SendError(clientID, Defines.NewResponse(request.Version, 404));
+            }
         }
 
-        public void SendResponse(int clientID, string response)
+        public void Send(int clientID, string response)
         {
-            if (m_Clients.TryGetValue(clientID, out var client))
-                client.SendResponse(response);
+            if (m_Clients.TryGetValue(clientID, out var client) && client.IsWebSocket())
+                client.Send(response);
         }
 
         public void SendError(int clientID, Response? response)
@@ -90,17 +111,10 @@ namespace WebOverlay.Http
                 client.SendResponse(response);
         }
 
-        internal void SetClientType(int clientID, ClientType clientType)
+        internal void EnableClientWebSocket(int clientID)
         {
             if (m_Clients.TryGetValue(clientID, out var client))
-                client.SetClientType(clientType);
-        }
-
-        internal ClientType GetClientType(int clientID)
-        {
-            if (m_Clients.TryGetValue(clientID, out var client))
-                return client.GetClientType();
-            return ClientType.Invalid;
+                client.EnableWebSocket();
         }
 
         internal void ListenTo(int clientID, Resource resource)

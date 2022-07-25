@@ -10,6 +10,9 @@ namespace WebOverlay.Http
     {
         protected Html.Document m_Page = new("");
 
+        public CodeDrivenHtmlResource(): base() { }
+        protected CodeDrivenHtmlResource(bool needUpdate) : base(needUpdate) { }
+
         protected override void OnInit(params dynamic[] args)
         {
             if (args.Length >= 1)

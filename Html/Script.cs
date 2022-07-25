@@ -16,13 +16,13 @@
             });
         }
 
-        public void SetScriptContent(string content) { AddElement(content); }
-        public void SetAsync(bool value) { SetAttribute("async", value); }
-        public void SetCrossOrigin(string value) { SetAttribute("crossorigin", value); }
-        public void SetDefer(bool value) { SetAttribute("defer", value); }
-        public void SetIntegrity(string value) { SetAttribute("integrity", value); }
-        public void SetReferrerPolicy(string value) { SetAttribute("referrerpolicy", value); }
-        public void SetSrc(string value) { SetAttribute("src", value); }
-        public void SetType(string value) { SetAttribute("type", value); }
+        public void SetScriptContent(string content) { AddContent(content); }
+        public void SetAsync(bool value) { AddAttribute("async", value); }
+        public void SetCrossOrigin(string value) { AddAttribute("crossorigin", value); }
+        public void SetDefer(bool value) { AddAttribute("defer", value); }
+        public void SetIntegrity(string value) { AddAttribute("integrity", value); }
+        public void SetReferrerPolicy(string value) { AddAttribute("referrerpolicy", value); }
+        public void SetSrc(string value) { AddAttribute("src", value); }
+        public void SetType(string value) { AddAttribute("type", value); }
     }
 }

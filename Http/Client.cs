@@ -3,39 +3,35 @@ using System.Text;
 
 namespace WebOverlay.Http
 {
-    internal enum ClientType
-    {
-        None,
-        WebSocket,
-        Browser,
-        Invalid
-    }
-
     internal class Client
     {
-        private ClientType m_ClientType = ClientType.None;
         private readonly int m_ID;
         private readonly Socket m_Socket;
         private byte[] m_Buffer = new byte[1024];
         private readonly Server m_Server;
         private Resource? m_Resource = null;
-        private readonly ABufferReader<Request> m_RequestBufferReader = new RequestBufferReader();
-        private readonly ABufferReader<string> m_WebSocketBufferReader = new WebSocketBufferReader();
+        private AProtocl m_ReaderWriter;
+        private bool m_IsWebSocket = false;
 
         internal Client(Server server, Socket socket, int id)
         {
             m_Server = server;
             m_Socket = socket;
             m_ID = id;
+            m_ReaderWriter = new Protocol(this, socket);
         }
 
-        internal ClientType GetClientType() { return m_ClientType; }
-        internal void SetClientType(ClientType clientType) { m_ClientType = clientType; }
+        internal void EnableWebSocket()
+        {
+            m_ReaderWriter = new WebSocket.Protocol(this, m_Socket);
+            m_IsWebSocket = true;
+        }
+
+        internal bool IsWebSocket() { return m_IsWebSocket; }
 
         internal void ListenTo(Resource resource)
         {
-            if (m_Resource != null)
-                m_Resource.RemoveListener(m_ID);
+            m_Resource?.RemoveListener(m_ID);
             m_Resource = resource;
             m_Resource.AddListener(m_ID);
         }
@@ -52,6 +48,22 @@ namespace WebOverlay.Http
             catch { }
         }
 
+        internal void TreatRequest(Request httpRequest)
+        {
+            m_Server.TreatRequest(m_ID, httpRequest);
+        }
+
+        internal void TreatWebSocketMessage(string message)
+        {
+            m_Resource?.OnWebsocketMessage(m_ID, message);
+        }
+
+        internal void TreatWebSocketClose(short code, string message)
+        {
+            m_Resource?.RemoveListener(m_ID);
+            MessageBox.Show(string.Format("[{0}]: {1}", code, message));
+        }
+
         private void ReceiveCallback(IAsyncResult AR)
         {
             try
@@ -60,79 +72,37 @@ namespace WebOverlay.Http
                 if (bytesRead > 1)
                 {
                     Array.Resize(ref m_Buffer, bytesRead);
-                    switch (m_ClientType)
-                    {
-                        case ClientType.None:
-                        case ClientType.Browser:
-                            {
-                                m_RequestBufferReader.ReadBuffer(m_Buffer);
-                                if (m_RequestBufferReader.HaveResult())
-                                {
-                                    foreach (Request httpRequest in m_RequestBufferReader.GetResult())
-                                        m_Server.TreatRequest(m_ID, httpRequest);
-                                    m_RequestBufferReader.ClearResult();
-                                }
-                                break;
-                            }
-                        case ClientType.WebSocket:
-                            {
-                                m_WebSocketBufferReader.ReadBuffer(m_Buffer);
-                                if (m_WebSocketBufferReader.HaveResult())
-                                {
-                                    if (m_Resource != null)
-                                    {
-                                        foreach (string message in m_WebSocketBufferReader.GetResult())
-                                            m_Resource.OnWebsocketMessage(m_ID, message);
-                                    }
-                                    m_WebSocketBufferReader.ClearResult();
-                                }
-                                break;
-                            }
-                    }
+                    m_ReaderWriter.ReadBuffer(m_Buffer);
                     StartReceiving();
                 }
                 else
-                {
                     Disconnect();
-                }
             }
             catch
             {
                 if (!m_Socket.Connected)
-                {
                     Disconnect();
-                }
                 else
-                {
                     StartReceiving();
-                }
             }
         }
 
         internal void Disconnect()
         {
-            if (m_Resource != null)
-                m_Resource.RemoveListener(m_ID);
+            m_Resource?.RemoveListener(m_ID);
             m_Server.RemoveUser(m_ID);
             m_Socket.Disconnect(true);
         }
 
-        internal void SendResponse(string response)
+        internal void Send(string response)
         {
-            try
-            {
-                byte[] data = Encoding.Default.GetBytes(response);
-                if (m_Socket.Connected)
-                    m_Socket.Send(data, data.Length, 0);
-            }
-            catch  {}
+            m_ReaderWriter.WriteBuffer(response);
         }
 
         internal void SendResponse(Response? response)
         {
-            if (response == null)
-                return;
-            SendResponse(response.ToString());
+            if (response != null)
+                Send(response.ToString());
         }
     }
 }

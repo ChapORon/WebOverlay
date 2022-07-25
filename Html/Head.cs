@@ -7,9 +7,10 @@ namespace WebOverlay.Html
         private readonly Dictionary<Meta.Type, Meta> m_MetaAttributes = new();
         private Base? m_Base = null;
 
-        public Head(string title) : base("head")
+        public Head(string title) : base("head", allowContent: false)
         {
-            AddElement(new Title(title));
+            AddChild(new Title(title));
+            SetElementValidationList(new(true){ "title", "style", "base", "link", "meta", "script", "noscript" });
         }
 
         public void SetCharset(string charset)
@@ -22,8 +23,8 @@ namespace WebOverlay.Html
             if (!m_MetaAttributes.ContainsKey(type))
             {
                 Meta meta = new(type);
-                AddElement(meta);
-                m_MetaAttributes.Add(type, meta);
+                AddChild(meta);
+                m_MetaAttributes[type] = meta;
             }
             m_MetaAttributes[type].SetContent(content);
         }
@@ -33,19 +34,19 @@ namespace WebOverlay.Html
             if (m_Base == null)
             {
                 m_Base = new();
-                AddElement(m_Base);
+                AddChild(m_Base);
             }
-            m_Base.SetBase(href, target);
+            m_Base[href] = target;
         }
 
         public void AddLink(Link link)
         {
-            AddElement(link);
+            AddChild(link);
         }
 
         public void AddScript(Script script)
         {
-            AddElement(script);
+            AddChild(script);
         }
     }
 }

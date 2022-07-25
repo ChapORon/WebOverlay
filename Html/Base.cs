@@ -23,15 +23,15 @@
         public void SetBase(string href, Type target)
         {
             if (string.IsNullOrWhiteSpace(href))
-                SetAttribute("href", href);
+                AddAttribute("href", href);
             else
                 RemoveAttribute("href");
             _ = target switch
             {
-                Type.BLANK => SetAttribute("target", "_blank"),
-                Type.PARENT => SetAttribute("target", "_parent"),
-                Type.SELF => SetAttribute("target", "_self"),
-                Type.TOP => SetAttribute("target", "_top"),
+                Type.BLANK => AddAttribute("target", "_blank"),
+                Type.PARENT => AddAttribute("target", "_parent"),
+                Type.SELF => AddAttribute("target", "_self"),
+                Type.TOP => AddAttribute("target", "_top"),
                 _ => RemoveAttribute("target")
             };
         }

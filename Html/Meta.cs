@@ -33,16 +33,16 @@
 
             _ = type switch
             {
-                Type.APPLICATION_NAME => SetAttribute("name", "application-name"),
-                Type.AUTHOR => SetAttribute("name", "author"),
-                Type.DESCRIPTION => SetAttribute("name", "description"),
-                Type.GENERATOR => SetAttribute("name", "generator"),
-                Type.KEYWORDS => SetAttribute("name", "keywords"),
-                Type.VIEWPORT => SetAttribute("name", "viewport"),
-                Type.CONTENT_SECURITY_POLICY => SetAttribute("http-equiv", "content-security-policy"),
-                Type.CONTENT_TYPE => SetAttribute("http-equiv", "content-type"),
-                Type.DEFAULT_STYLE => SetAttribute("http-equiv", "default-style"),
-                Type.REFRESH => SetAttribute("http-equiv", "refresh"),
+                Type.APPLICATION_NAME => AddAttribute("name", "application-name"),
+                Type.AUTHOR => AddAttribute("name", "author"),
+                Type.DESCRIPTION => AddAttribute("name", "description"),
+                Type.GENERATOR => AddAttribute("name", "generator"),
+                Type.KEYWORDS => AddAttribute("name", "keywords"),
+                Type.VIEWPORT => AddAttribute("name", "viewport"),
+                Type.CONTENT_SECURITY_POLICY => AddAttribute("http-equiv", "content-security-policy"),
+                Type.CONTENT_TYPE => AddAttribute("http-equiv", "content-type"),
+                Type.DEFAULT_STYLE => AddAttribute("http-equiv", "default-style"),
+                Type.REFRESH => AddAttribute("http-equiv", "refresh"),
                 _ => false
             };
         }
@@ -50,9 +50,9 @@
         public void SetContent(string content)
         {
             if (m_Type == Type.CHARSET)
-                SetAttribute("charset", content);
+                AddAttribute("charset", content);
             else
-                SetAttribute("content", content);
+                AddAttribute("content", content);
         }
     }
 }

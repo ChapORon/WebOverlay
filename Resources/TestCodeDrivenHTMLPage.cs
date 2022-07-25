@@ -2,37 +2,31 @@
 
 namespace WebOverlay.Resources
 {
-    public class TestCodeDrivenHTMLPage : Http.CodeDrivenHtmlResource
+    public class TestCodeDrivenHTMLPage : Overlay
     {
-        protected override void Generate()
+        private long m_DeltaTime = 0;
+        private Div m_BlinkDiv;
+
+        public TestCodeDrivenHTMLPage()
         {
-            Head head = m_Page.GetHead();
-            head.SetCharset("UTF-8");
-            head.AddMeta(Meta.Type.VIEWPORT, "width=1920px,height=1080px");
+            m_BlinkDiv = NewElement<Div>("blink");
+            m_BlinkDiv.AddContent("Blink");
+        }
 
-            Script framework = new();
-            framework.SetSrc("/js/woframework.js");
-            head.AddScript(framework);
-
-            Script script1 = new();
-            script1.SetSrc("/js/test.js");
-            head.AddScript(script1);
-
+        protected override void GenerateOverlay()
+        {
             Body body = m_Page.GetBody();
-            body.AddAttribute("onload", "wof.main();onBlinkLoad()");
-            Div blinkDiv = new();
-            blinkDiv.SetID("blink");
-            blinkDiv.AddContent("Blink");
-            body.AddChild(blinkDiv);
+            body.AddAttribute("onload", "wof.main()");
+            body.AddChild(m_BlinkDiv);
             body.AddLineBreak();
-            Tag gifDiv = new("img");
+            Tag gifDiv = NewElement("img", "slowpoke-gif");
             gifDiv.AddAttribute("src", "http://i.stack.imgur.com/SBv4T.gif");
             gifDiv.AddAttribute("alt", "this slowpoke moves");
             gifDiv.AddAttribute("width", 250);
             body.AddChild(gifDiv);
             body.AddLineBreak();
             body.AddContent("This is a ");
-            Tag link = new("a");
+            Tag link = NewElement("a", "test-link");
             link.AddAttribute("href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
             link.AddContent("link");
             body.AddChild(link);
@@ -41,9 +35,22 @@ namespace WebOverlay.Resources
             body.AddContent("This is another line");
         }
 
+        protected override void UpdateOverlay(long deltaTime)
+        {
+            m_DeltaTime += deltaTime;
+            while (m_DeltaTime >= 1000)
+            {
+                m_BlinkDiv.SetHidden(!m_BlinkDiv.IsHidden());
+                m_DeltaTime -= 1000;
+            }
+        }
+
         protected override void WebsocketMessage(int clientID, string message)
         {
-            MessageBox.Show(message);
+            if (message == "ping")
+                Send(clientID, "pong");
+            else
+                MessageBox.Show(message);
         }
     }
 }
